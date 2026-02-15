@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>TTF Ziffern Export</title>
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background:#111;
+  color:#eee;
+  padding:30px;
+}
+h1 { margin-bottom:10px; }
+.controls { margin-bottom:20px; }
+canvas {
+  background:#222;
+  border:1px solid #444;
+  margin:6px;
+}
+.grid {
+  display:flex;
+  flex-wrap:wrap;
+}
+button {
+  padding:8px 12px;
+  margin:4px;
+  background:#444;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
+button:hover { background:#666; }
+</style>
+</head>
+<body>
+
+<h1>TTF → PNG Ziffern Export</h1>
+
+<div class="controls">
+  <input type="file" id="fontInput" accept=".ttf,.otf" />
+  Größe: <input type="number" id="size" value="256" />
+  <button onclick="renderDigits()">Vorschau</button>
+  <button onclick="downloadAll()">Alle herunterladen</button>
+</div>
+
+<div id="preview" class="grid"></div>
+
+<script>
+let fontFace = null;
+let canvases = [];
+
+async function renderDigits() {
+  const file = document.getElementById("fontInput").files[0];
+  const size = parseInt(document.getElementById("size").value);
+  if (!file) return alert("Font wählen");
+
+  const url = URL.createObjectURL(file);
+  fontFace = new FontFace("customFont", `url(${url})`);
+  await fontFace.load();
+  document.fonts.add(fontFace);
+
+  const preview = document.getElementById("preview");
+  preview.innerHTML = "";
+  canvases = [];
+
+  for (let d = 0; d <= 9; d++) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = size;
+    canvas.height = size;
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = size * 0.8 + "px customFont";
+    ctx.fillText(d.toString(), size/2, size/2);
+
+    preview.appendChild(canvas);
+    canvases.push({digit:d, canvas});
+  }
+}
+
+function downloadAll() {
+  canvases.forEach(item => {
+    const link = document.createElement("a");
+    link.download = item.digit + ".png";
+    link.href = item.canvas.toDataURL("image/png");
+    link.click();
+  });
+}
+</script>
+
+</body>
+</html>
