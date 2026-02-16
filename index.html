@@ -1,95 +1,84 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>TTF Ziffern Export</title>
-<style>
-body {
-  font-family: system-ui, sans-serif;
-  background:#111;
-  color:#eee;
-  padding:30px;
-}
-h1 { margin-bottom:10px; }
-.controls { margin-bottom:20px; }
-canvas {
-  background:#222;
-  border:1px solid #444;
-  margin:6px;
-}
-.grid {
-  display:flex;
-  flex-wrap:wrap;
-}
-button {
-  padding:8px 12px;
-  margin:4px;
-  background:#444;
-  color:white;
-  border:none;
-  cursor:pointer;
-}
-button:hover { background:#666; }
-</style>
+    <meta charset="UTF-8" />
+    <title>TTF Glyph Export</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Using opentype.js to parse font files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
 </head>
 <body>
 
-<h1>TTF → PNG Ziffern Export</h1>
+<h1>TTF → Image Glyph Export</h1>
 
 <div class="controls">
-  <input type="file" id="fontInput" accept=".ttf,.otf" />
-  Größe: <input type="number" id="size" value="256" />
-  <button onclick="renderDigits()">Vorschau</button>
-  <button onclick="downloadAll()">Alle herunterladen</button>
+    <div class="control-group">
+        <div class="control-item">
+            <label for="fontInput">Font File (.ttf, .otf, .woff)</label>
+            <input type="file" id="fontInput" accept=".ttf,.otf,.woff" />
+        </div>
+        <button onclick="loadFont()">1. Load Font</button>
+    </div>
+
+    <div class="control-group">
+        <h3>Global Settings</h3>
+    </div>
+    
+    <div class="control-group">
+        <div class="control-item">
+            <label>Width</label>
+            <input type="number" id="globalWidth" value="256" onchange="updateAllSettings()" />
+        </div>
+        <div class="control-item">
+            <label>Height</label>
+            <input type="number" id="globalHeight" value="256" onchange="updateAllSettings()" />
+        </div>
+        <div class="control-item">
+            <label>Margin (px)</label>
+            <input type="number" id="globalMargin" value="20" onchange="updateAllSettings()" />
+        </div>
+        <div class="control-item">
+            <label>Font Size Scale (0-1)</label>
+            <input type="number" id="globalScale" value="0.7" step="0.1" max="1" min="0.1" onchange="updateAllSettings()" />
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="control-item">
+            <label>Glyph Color</label>
+            <input type="color" id="globalColor" value="#ffffff" onchange="updateAllSettings()" />
+        </div>
+        <div class="control-item">
+            <label>Background Transparent</label>
+            <input type="checkbox" id="globalTransparent" checked onchange="updateAllSettings()" style="margin-top:10px; transform: scale(1.5);" />
+        </div>
+        <div class="control-item">
+            <label>Background Color</label>
+            <input type="color" id="globalBgColor" value="#000000" onchange="updateAllSettings()" />
+        </div>
+        <div class="control-item">
+            <label>Format</label>
+            <select id="fileFormat">
+                <option value="image/png">PNG</option>
+                <option value="image/jpeg">JPG</option>
+                <option value="image/webp">WebP</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="control-group">
+         <div class="control-item" style="flex-grow: 1;">
+            <label>Filter Glyphs (Characters to render)</label>
+            <textarea id="glyphInput" rows="2" placeholder="Loaded glyphs will appear here..." style="width: 100%;"></textarea>
+         </div>
+         <button onclick="renderAllPreviews()">2. Update Previews</button>
+         <button onclick="downloadAll()" class="secondary">3. Download All</button>
+    </div>
 </div>
 
 <div id="preview" class="grid"></div>
 
-<script>
-let fontFace = null;
-let canvases = [];
-
-async function renderDigits() {
-  const file = document.getElementById("fontInput").files[0];
-  const size = parseInt(document.getElementById("size").value);
-  if (!file) return alert("Font wählen");
-
-  const url = URL.createObjectURL(file);
-  fontFace = new FontFace("customFont", `url(${url})`);
-  await fontFace.load();
-  document.fonts.add(fontFace);
-
-  const preview = document.getElementById("preview");
-  preview.innerHTML = "";
-  canvases = [];
-
-  for (let d = 0; d <= 9; d++) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = size;
-    canvas.height = size;
-
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = size * 0.8 + "px customFont";
-    ctx.fillText(d.toString(), size/2, size/2);
-
-    preview.appendChild(canvas);
-    canvases.push({digit:d, canvas});
-  }
-}
-
-function downloadAll() {
-  canvases.forEach(item => {
-    const link = document.createElement("a");
-    link.download = item.digit + ".png";
-    link.href = item.canvas.toDataURL("image/png");
-    link.click();
-  });
-}
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
