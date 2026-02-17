@@ -170,29 +170,40 @@ function createGlyphCard(char, global, container) {
         }
 
         // Draw Glyph
-        // We need to center the glyph.
-        // opentype.js Path.draw(ctx, x, y) draws relative to baseline.
-        
-        // 1. Get the path to measure it
-        // We surmise a font size based on height minus margins
+        // Calculate available space with margins
+        const availableW = state.width - (state.margin * 2);
         const availableH = state.height - (state.margin * 2);
-        const fontSize = availableH / state.scale; // rough estimate
         
-        // Create path
-        const path = currentFont.getPath(state.char, 0, 0, fontSize);
-        const boundingBox = path.getBoundingBox();
+        // Start with a base font size
+        let fontSize = 1000;
+        let path = currentFont.getPath(state.char, 0, 0, fontSize);
+        let bbox = path.getBoundingBox();
         
-        const glyphW = boundingBox.x2 - boundingBox.x1;
-        const glyphH = boundingBox.y2 - boundingBox.y1;
+        // Calculate actual glyph dimensions at this size
+        let glyphW = bbox.x2 - bbox.x1;
+        let glyphH = bbox.y2 - bbox.y1;
         
-        // Calculate Center
-        // X: Center of canvas
-        // Y: Center of canvas + half of glyph height (approx correction for baseline)
-        // Note: opentype coordinates y=0 is baseline, positive y goes UP? No, standard canvas is y down.
-        // Let's check opentype docs: "The x and y parameters specify the origin (left end of the baseline) of the glyph."
+        // Scale to fit within available space
+        const scaleX = availableW / glyphW;
+        const scaleY = availableH / glyphH;
+        const scaleFactor = Math.min(scaleX, scaleY) * state.scale;
         
-        const x = (state.width / 2) - (glyphW / 2) - boundingBox.x1;
-        const y = (state.height / 2) + ((boundingBox.y2 + boundingBox.y1) / 2);
+        // Apply the scale to get final font size
+        fontSize = fontSize * scaleFactor;
+        
+        // Regenerate path with correct size
+        path = currentFont.getPath(state.char, 0, 0, fontSize);
+        bbox = path.getBoundingBox();
+        glyphW = bbox.x2 - bbox.x1;
+        glyphH = bbox.y2 - bbox.y1;
+        
+        // Center the glyph
+        // X: center horizontally by offsetting from the bounding box x1
+        const x = (state.width / 2) - (glyphW / 2) - bbox.x1;
+        
+        // Y: opentype draws relative to baseline
+        // To center vertically, position baseline so glyph center aligns with canvas center
+        const y = (state.height / 2) - (bbox.y1 + bbox.y2) / 2;
 
         // Draw
         path.fill = state.color;
