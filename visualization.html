@@ -262,11 +262,12 @@ glyph.getPath(x, y, fontScale);
             ctx.fillText('Center ↓', x + 5, 20);
         }
         
-        // Draw examples
-        // "A" has bbox roughly at [0, 0, 1366, 1466]
+        // Draw examples with mock bounding box values for demonstration
+        // These are example values to illustrate how the algorithm works
+        // "A" example: bbox values are typical for a capital letter
         drawDemo('canvas1', 'A', {x1: 0, y1: 0, x2: 1366, y2: 1466});
         
-        // "g" has bbox with negative y1 (descender)
+        // "g" example: bbox with negative y1 to show descender handling
         drawDemo('canvas2', 'g', {x1: 100, y1: -400, x2: 1200, y2: 1100});
     </script>
 </body>

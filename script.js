@@ -215,13 +215,6 @@ function renderGlyph(glyphData) {
     const glyphWidth = bbox.x2 - bbox.x1;
     const glyphHeight = bbox.y2 - bbox.y1;
     
-    // Get font metrics for baseline calculation
-    const fontMetrics = {
-        ascender: loadedFont.ascender,
-        descender: loadedFont.descender,
-        unitsPerEm: loadedFont.unitsPerEm
-    };
-    
     // Calculate scale to fit glyph in available space
     let scaleX = availableWidth / glyphWidth;
     let scaleY = availableHeight / glyphHeight;
@@ -240,28 +233,6 @@ function renderGlyph(glyphData) {
     // Center position within available space
     const centerX = settings.margin + availableWidth / 2;
     const centerY = settings.margin + availableHeight / 2;
-    
-    // Calculate position: center the glyph's bounding box
-    // For X: center - half of scaled width, then offset by scaled bbox.x1
-    // For Y: center - half of scaled height, then offset by scaled bbox.y1
-    const x = centerX - scaledWidth / 2 - bbox.x1 * fontScale;
-    const y = centerY - scaledHeight / 2 - bbox.y1 * fontScale;
-    
-    // Debug logging
-    if (settings.debug) {
-        console.log('=== Glyph Debug Info ===');
-        console.log('Glyph:', glyphData.char, 'U+' + glyphData.charCode.toString(16).toUpperCase());
-        console.log('Canvas size:', canvas.width, 'x', canvas.height);
-        console.log('Margin:', settings.margin);
-        console.log('Available space:', availableWidth, 'x', availableHeight);
-        console.log('BBox:', JSON.stringify(bbox));
-        console.log('Glyph dimensions:', glyphWidth, 'x', glyphHeight);
-        console.log('Font metrics:', JSON.stringify(fontMetrics));
-        console.log('Font scale:', fontScale);
-        console.log('Scaled dimensions:', scaledWidth, 'x', scaledHeight);
-        console.log('Center point:', centerX, ',', centerY);
-        console.log('Final position (x, y):', x, ',', y);
-    }
     
     // Draw the glyph
     const path = glyph.getPath(x, y, fontScale);
@@ -306,15 +277,24 @@ function renderGlyph(glyphData) {
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
         
-        // Draw labels
-        ctx.fillStyle = 'yellow';
+        // Draw labels with better contrast
+        ctx.fillStyle = '#FFD700'; // Gold color for better visibility
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
         ctx.font = '10px monospace';
-        ctx.fillText('Margin area (red)', settings.margin + 5, settings.margin + 12);
-        ctx.fillText('BBox (green)', bboxX + 5, bboxY + 12);
-        ctx.fillText('Baseline (blue)', 5, y - 5);
-        ctx.fillText(`Origin: (${Math.round(x)}, ${Math.round(y)})`, 5, 15);
-        ctx.fillText(`BBox: [${Math.round(bbox.x1)}, ${Math.round(bbox.y1)}, ${Math.round(bbox.x2)}, ${Math.round(bbox.y2)}]`, 5, 30);
-        ctx.fillText(`Scale: ${fontScale.toFixed(3)}`, 5, 45);
+        
+        // Text with outline for better readability
+        function drawTextWithOutline(text, x, y) {
+            ctx.strokeText(text, x, y);
+            ctx.fillText(text, x, y);
+        }
+        
+        drawTextWithOutline('Margin area (red)', settings.margin + 5, settings.margin + 12);
+        drawTextWithOutline('BBox (green)', bboxX + 5, bboxY + 12);
+        drawTextWithOutline('Baseline (blue)', 5, y - 5);
+        drawTextWithOutline(`Origin: (${Math.round(x)}, ${Math.round(y)})`, 5, 15);
+        drawTextWithOutline(`BBox: [${Math.round(bbox.x1)}, ${Math.round(bbox.y1)}, ${Math.round(bbox.x2)}, ${Math.round(bbox.y2)}]`, 5, 30);
+        drawTextWithOutline(`Scale: ${fontScale.toFixed(3)}`, 5, 45);
         
         ctx.restore();
     }
