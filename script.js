@@ -2,6 +2,9 @@
 let loadedFont = null;
 let glyphCards = [];
 
+// Constants
+const DOWNLOAD_DELAY_MS = 100; // Delay between batch downloads to avoid browser blocking
+
 /**
  * Load the selected font file using opentype.js
  */
@@ -235,7 +238,9 @@ function renderGlyph(glyphData) {
  * Generate filename for a glyph export
  */
 function generateGlyphFileName(charCode, format) {
-    const extension = format.split('/')[1];
+    // Extract extension from MIME type (e.g., 'image/png' -> 'png')
+    const parts = format.split('/');
+    const extension = parts.length > 1 ? parts[1] : 'png'; // Default to 'png' if format is invalid
     return `glyph_U+${charCode.toString(16).toUpperCase().padStart(4, '0')}.${extension}`;
 }
 
@@ -279,7 +284,7 @@ function downloadAll() {
     // Download each glyph with a small delay to avoid browser blocking
     let index = 0;
     
-    function downloadNext() {
+    function downloadNextGlyph() {
         if (index >= glyphCards.length) {
             alert(`Downloaded ${glyphCards.length} glyphs successfully!`);
             return;
@@ -298,11 +303,11 @@ function downloadAll() {
             
             index++;
             // Small delay between downloads
-            setTimeout(downloadNext, 100);
+            setTimeout(downloadNextGlyph, DOWNLOAD_DELAY_MS);
         }, format);
     }
     
-    downloadNext();
+    downloadNextGlyph();
 }
 
 /**
