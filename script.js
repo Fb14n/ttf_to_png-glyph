@@ -219,6 +219,9 @@ function renderGlyph(glyphData) {
     const scaledWidth = glyphWidth * fontScale;
     const scaledHeight = glyphHeight * fontScale;
     
+    // Position calculation: Start at margin, add centering offset, then subtract glyph origin
+    // bbox.x1 and bbox.y1 represent the glyph's bounding box origin, which must be subtracted
+    // after scaling to properly position the glyph path
     const x = settings.margin + (availableWidth - scaledWidth) / 2 - bbox.x1 * fontScale;
     const y = settings.margin + (availableHeight - scaledHeight) / 2 - bbox.y1 * fontScale;
     
@@ -226,6 +229,14 @@ function renderGlyph(glyphData) {
     const path = glyph.getPath(x, y, fontScale);
     path.fill = settings.color;
     path.draw(ctx);
+}
+
+/**
+ * Generate filename for a glyph export
+ */
+function generateGlyphFileName(charCode, format) {
+    const extension = format.split('/')[1];
+    return `glyph_U+${charCode.toString(16).toUpperCase().padStart(4, '0')}.${extension}`;
 }
 
 /**
@@ -242,7 +253,7 @@ function downloadGlyph(buttonElement) {
     }
     
     const format = document.getElementById('fileFormat').value;
-    const fileName = `glyph_U+${glyphData.charCode.toString(16).toUpperCase().padStart(4, '0')}.${format.split('/')[1]}`;
+    const fileName = generateGlyphFileName(glyphData.charCode, format);
     
     glyphData.canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
@@ -275,7 +286,7 @@ function downloadAll() {
         }
         
         const glyphData = glyphCards[index];
-        const fileName = `glyph_U+${glyphData.charCode.toString(16).toUpperCase().padStart(4, '0')}.${format.split('/')[1]}`;
+        const fileName = generateGlyphFileName(glyphData.charCode, format);
         
         glyphData.canvas.toBlob((blob) => {
             const url = URL.createObjectURL(blob);
