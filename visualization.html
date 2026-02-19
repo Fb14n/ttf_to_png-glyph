@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>TTF Koordinatensystem - Visualisierung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+        }
+        .demo-canvas {
+            border: 2px solid #333;
+            margin: 20px 0;
+            display: block;
+        }
+        .explanation {
+            background: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin: 20px 0;
+        }
+        .code {
+            background: #f5f5f5;
+            padding: 10px;
+            font-family: monospace;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TTF Koordinatensystem Visualisierung</h1>
+        
+        <div class="explanation">
+            <h2>Problem: Warum sind Glyphen nicht zentriert?</h2>
+            <p>
+                In TTF-Dateien liegt der Ursprung (0,0) auf der <strong>Baseline</strong>, nicht in der Mitte des Glyphen.
+                Die Y-Achse zeigt nach oben (im Canvas zeigt sie nach unten). 
+                Um einen Glyph korrekt zu zentrieren, müssen wir die <strong>Bounding Box</strong> zentrieren, nicht den Ursprung.
+            </p>
+        </div>
+
+        <h2>Beispiel: Buchstabe "A"</h2>
+        <canvas id="canvas1" class="demo-canvas" width="400" height="400"></canvas>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(255,0,0,0.2); border-color: red;"></div>
+                <span>Margin-Bereich (verfügbarer Platz)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(0,255,0,0.2); border-color: lime;"></div>
+                <span>Bounding Box des Glyphen</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: blue;"></div>
+                <span>Baseline (Y=0 in TTF)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: cyan;"></div>
+                <span>Vertikale Mittellinie (X=0 in TTF)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: red; width: 10px; height: 10px; border-radius: 50%;"></div>
+                <span>Zentrum des verfügbaren Bereichs</span>
+            </div>
+        </div>
+
+        <h2>Beispiel: Buchstabe "g" (mit Unterlänge)</h2>
+        <canvas id="canvas2" class="demo-canvas" width="400" height="400"></canvas>
+        
+        <div class="explanation">
+            <p>
+                <strong>Beachte:</strong> Bei "g" ist die Bounding Box größer, weil sie die Unterlänge einschließt. 
+                Der bbox.y1 ist negativ (unter der Baseline). Der Algorithmus berücksichtigt das automatisch.
+            </p>
+        </div>
+
+        <h2>Der Positionierungs-Algorithmus</h2>
+        <div class="code">
+// 1. Verfügbaren Platz berechnen (Canvas minus Margins)
+const availableWidth = canvas.width - (margin * 2);
+const availableHeight = canvas.height - (margin * 2);
+
+// 2. Zentrum des verfügbaren Bereichs
+const centerX = margin + availableWidth / 2;
+const centerY = margin + availableHeight / 2;
+
+// 3. Glyph-Dimensionen aus Bounding Box
+const glyphWidth = bbox.x2 - bbox.x1;
+const glyphHeight = bbox.y2 - bbox.y1;
+
+// 4. Skalierung berechnen (damit Glyph reinpasst)
+const fontScale = Math.min(
+    availableWidth / glyphWidth,
+    availableHeight / glyphHeight
+) * settings.scale;
+
+// 5. Skalierte Dimensionen
+const scaledWidth = glyphWidth * fontScale;
+const scaledHeight = glyphHeight * fontScale;
+
+// 6. WICHTIG: Zentriere die Bounding Box, nicht den Ursprung!
+const x = centerX - scaledWidth / 2 - bbox.x1 * fontScale;
+const y = centerY - scaledHeight / 2 - bbox.y1 * fontScale;
+
+// 7. Glyph zeichnen mit berechneter Position
+glyph.getPath(x, y, fontScale);
+        </div>
+
+        <div class="explanation">
+            <h3>Warum funktioniert das?</h3>
+            <ol>
+                <li><code>centerX - scaledWidth / 2</code>: Positioniert die linke Kante der Bounding Box zentriert</li>
+                <li><code>- bbox.x1 * fontScale</code>: Verschiebt den Glyph-Pfad, damit die Bounding Box an der richtigen Stelle ist</li>
+                <li>Gleiche Logik für Y-Achse</li>
+            </ol>
+            <p>
+                Das funktioniert für alle Glyphen, egal ob sie Unterlängen (g, y, p), Überlängen (h, l, b) 
+                oder sonstige Besonderheiten haben.
+            </p>
+        </div>
+
+        <h2>Teste es selbst!</h2>
+        <div class="explanation">
+            <p>
+                Um die Debug-Funktionen in der Haupt-Anwendung zu nutzen:
+            </p>
+            <ol>
+                <li>Öffne <code>index.html</code></li>
+                <li>Lade eine TTF-Datei</li>
+                <li>Aktiviere das <strong>"Debug Mode"</strong> Checkbox</li>
+                <li>Klicke "Update Previews"</li>
+                <li>Öffne die Browser-Konsole (F12)</li>
+                <li>Schaue dir die visuellen Overlays und Console-Logs an</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Simulate glyph rendering with mock data
+        function drawDemo(canvasId, glyphName, bbox) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Settings
+            const margin = 40;
+            const availableWidth = canvas.width - (margin * 2);
+            const availableHeight = canvas.height - (margin * 2);
+            
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Background
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw margin area (red)
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(margin, margin, availableWidth, availableHeight);
+            ctx.fillStyle = 'rgba(255,0,0,0.05)';
+            ctx.fillRect(margin, margin, availableWidth, availableHeight);
+            
+            // Calculate center
+            const centerX = margin + availableWidth / 2;
+            const centerY = margin + availableHeight / 2;
+            
+            // Draw center point (red)
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Calculate glyph dimensions
+            const glyphWidth = bbox.x2 - bbox.x1;
+            const glyphHeight = bbox.y2 - bbox.y1;
+            
+            // Scale to fit
+            const fontScale = Math.min(
+                availableWidth / glyphWidth,
+                availableHeight / glyphHeight
+            ) * 0.7;
+            
+            const scaledWidth = glyphWidth * fontScale;
+            const scaledHeight = glyphHeight * fontScale;
+            
+            // Calculate position
+            const x = centerX - scaledWidth / 2 - bbox.x1 * fontScale;
+            const y = centerY - scaledHeight / 2 - bbox.y1 * fontScale;
+            
+            // Draw bounding box (green)
+            const bboxX = x + bbox.x1 * fontScale;
+            const bboxY = y + bbox.y1 * fontScale;
+            ctx.strokeStyle = 'lime';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bboxX, bboxY, scaledWidth, scaledHeight);
+            ctx.fillStyle = 'rgba(0,255,0,0.1)';
+            ctx.fillRect(bboxX, bboxY, scaledWidth, scaledHeight);
+            
+            // Draw baseline (blue)
+            ctx.strokeStyle = 'blue';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+            
+            // Draw vertical center line (cyan)
+            ctx.strokeStyle = 'cyan';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+            
+            // Draw mock glyph shape
+            ctx.fillStyle = '#333';
+            ctx.font = `${scaledHeight * 0.8}px Arial`;
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText(glyphName, x, y);
+            
+            // Labels
+            ctx.fillStyle = 'black';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Canvas: ${canvas.width}×${canvas.height}`, 10, 20);
+            ctx.fillText(`Margin: ${margin}px`, 10, 35);
+            ctx.fillText(`Available: ${availableWidth}×${availableHeight}`, 10, 50);
+            ctx.fillText(`BBox: [${bbox.x1}, ${bbox.y1}, ${bbox.x2}, ${bbox.y2}]`, 10, 65);
+            ctx.fillText(`Scale: ${fontScale.toFixed(3)}`, 10, 80);
+            ctx.fillText(`Position: (${Math.round(x)}, ${Math.round(y)})`, 10, 95);
+            
+            ctx.fillText('Baseline →', canvas.width - 80, y - 5);
+            ctx.fillText('Center ↓', x + 5, 20);
+        }
+        
+        // Draw examples with mock bounding box values for demonstration
+        // These are example values to illustrate how the algorithm works
+        // "A" example: bbox values are typical for a capital letter
+        drawDemo('canvas1', 'A', {x1: 0, y1: 0, x2: 1366, y2: 1466});
+        
+        // "g" example: bbox with negative y1 to show descender handling
+        drawDemo('canvas2', 'g', {x1: 100, y1: -400, x2: 1200, y2: 1100});
+    </script>
+</body>
+</html>
