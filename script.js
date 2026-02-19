@@ -202,8 +202,8 @@ function createGlyphCard(char, global, container) {
         const x = (state.width / 2) - (glyphW / 2) - bbox.x1;
         
         // Y: opentype draws relative to baseline
-        // To center vertically, position baseline so glyph center aligns with canvas center
-        const y = (state.height / 2) - (bbox.y1 + bbox.y2) / 2;
+        // To center vertically within available space (accounting for margins)
+        const y = state.margin + (availableH / 2) - (bbox.y1 + bbox.y2) / 2;
 
         // Draw
         path.fill = state.color;
