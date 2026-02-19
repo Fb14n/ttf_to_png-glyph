@@ -234,6 +234,10 @@ function renderGlyph(glyphData) {
     const centerX = settings.margin + availableWidth / 2;
     const centerY = settings.margin + availableHeight / 2;
     
+    // Calculate glyph position to center the bounding box
+    const x = centerX - scaledWidth / 2 - bbox.x1 * fontScale;
+    const y = centerY - scaledHeight / 2 - bbox.y1 * fontScale;
+    
     // Draw the glyph
     const path = glyph.getPath(x, y, fontScale);
     path.fill = settings.color;
